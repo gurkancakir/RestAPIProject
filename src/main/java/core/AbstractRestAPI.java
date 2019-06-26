@@ -7,13 +7,14 @@ import java.lang.reflect.ParameterizedType;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import core.exception.APINotFoundException;
+import core.exception.HttpStatusException;
 import core.interfaces.IRestAPI;
 import core.interfaces.RestAPI;
 import org.apache.http.HttpResponse;
 import org.apache.http.HttpStatus;
+import org.apache.http.client.HttpClient;
 import org.apache.http.client.methods.*;
 import org.apache.http.entity.StringEntity;
-import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.client.HttpClients;
 
 public abstract class AbstractRestAPI<T, V> implements IRestAPI<V> {
@@ -43,7 +44,7 @@ public abstract class AbstractRestAPI<T, V> implements IRestAPI<V> {
             }
 
             HttpUriRequest request = createHttpClient();
-            CloseableHttpClient client = HttpClients.createDefault();
+            HttpClient client = HttpClients.createDefault();
 
             request.setHeader("Accept",       "application/json");
             request.setHeader("Content-type", "application/json");
@@ -56,7 +57,7 @@ public abstract class AbstractRestAPI<T, V> implements IRestAPI<V> {
             System.out.println("Response Code : " + responseCode);
 
             if (responseCode != HttpStatus.SC_OK) {
-                throw new APINotFoundException();
+                throw new HttpStatusException(responseCode, baseUrl + api.endpoint(), api.requestType());
             }
 
             V obj = gson.fromJson(new InputStreamReader(response.getEntity().getContent()), getOutputClass());
