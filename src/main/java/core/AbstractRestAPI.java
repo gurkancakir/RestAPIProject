@@ -3,6 +3,7 @@ package core;
 import java.io.InputStreamReader;
 import java.io.UnsupportedEncodingException;
 import java.lang.reflect.ParameterizedType;
+import java.util.Map;
 
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
@@ -26,6 +27,7 @@ public abstract class AbstractRestAPI<T, V> implements IRestAPI<V> {
     public abstract void beforeExecute(T input);
     public abstract void afterExecute(V output);
     public abstract void catchException(Exception e);
+    public abstract Map<String, String> getHeaders();
 
     public AbstractRestAPI(String baseUrl) {
         this.baseUrl = baseUrl;
@@ -46,8 +48,11 @@ public abstract class AbstractRestAPI<T, V> implements IRestAPI<V> {
             HttpUriRequest request = createHttpClient();
             HttpClient client = HttpClients.createDefault();
 
-            request.setHeader("Accept",       "application/json");
-            request.setHeader("Content-type", "application/json");
+            // add headers
+            Map<String, String> headers = getHeaders();
+            for (String key : headers.keySet()) {
+                request.setHeader(key, headers.get(key));
+            }
 
             beforeExecute(input);
             HttpResponse response = client.execute(request);
