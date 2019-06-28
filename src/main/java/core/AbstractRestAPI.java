@@ -1,39 +1,32 @@
 package core;
 
-import java.io.InputStreamReader;
-import java.io.UnsupportedEncodingException;
 import java.lang.reflect.ParameterizedType;
 import java.util.Map;
 
-import com.google.gson.Gson;
-import com.google.gson.GsonBuilder;
+import com.sun.jersey.api.client.Client;
+import com.sun.jersey.api.client.ClientResponse;
+import com.sun.jersey.api.client.WebResource;
+import com.sun.jersey.api.client.filter.LoggingFilter;
 import core.exception.APINotFoundException;
 import core.exception.HttpStatusException;
 import core.interfaces.IRestAPI;
 import core.interfaces.RestAPI;
-import org.apache.http.HttpResponse;
-import org.apache.http.HttpStatus;
-import org.apache.http.client.HttpClient;
-import org.apache.http.client.methods.*;
-import org.apache.http.entity.StringEntity;
-import org.apache.http.impl.client.HttpClients;
 
 public abstract class AbstractRestAPI<T, V> implements IRestAPI<V> {
+    protected static final String CONTENT_TYPE_JSON = "application/json";
+
     protected RestAPI api;
-    protected String baseUrl;
-    protected T input;
-    protected Gson gson;
+    protected String  baseUrl;
+    protected T       input;
 
     public abstract void beforeExecute(T input);
     public abstract void afterExecute(V output);
     public abstract void catchException(Exception e);
     public abstract Map<String, String> getHeaders();
+    public abstract Map<String, String> getQueryParams();
 
     public AbstractRestAPI(String baseUrl) {
         this.baseUrl = baseUrl;
-        gson = new GsonBuilder()
-                    .setPrettyPrinting()
-                    .create();
     }
 
     public V execute() {
@@ -45,27 +38,45 @@ public abstract class AbstractRestAPI<T, V> implements IRestAPI<V> {
                 throw new APINotFoundException();
             }
 
-            HttpUriRequest request = createHttpClient();
-            HttpClient client = HttpClients.createDefault();
+
+            Client client = Client.create();
+            WebResource webResource = client.resource(baseUrl + api.endpoint());
+            beforeExecute(input);
+
+            // add query params
+            Map<String, String> queryParams = getQueryParams();
+            if (queryParams != null) {
+                for (Map.Entry<String, String> entry : queryParams.entrySet()) {
+                    webResource.queryParam(entry.getKey(), entry.getValue());
+                }
+            }
+
+            WebResource.Builder builder = webResource.type(CONTENT_TYPE_JSON);
+
+            if (input != null) {
+                builder.entity(input);
+            }
 
             // add headers
             Map<String, String> headers = getHeaders();
-            for (String key : headers.keySet()) {
-                request.setHeader(key, headers.get(key));
+            if (headers != null) {
+                for (Map.Entry<String, String> entry : headers.entrySet()) {
+                    builder.header(entry.getKey(), entry.getValue());
+                }
             }
 
-            beforeExecute(input);
-            HttpResponse response = client.execute(request);
-
-            int responseCode = response.getStatusLine().getStatusCode();
+            client.addFilter(new LoggingFilter(System.out));
             System.out.println("\nSending '"+ api.requestType().name() +"' request to URL : " +  baseUrl + api.endpoint());
+            ClientResponse response = builder.method(api.requestType().name(), ClientResponse.class);
+
+            int responseCode = response.getStatus();
             System.out.println("Response Code : " + responseCode);
 
-            if (responseCode != HttpStatus.SC_OK) {
+            if (responseCode != 200) {
                 throw new HttpStatusException(responseCode, baseUrl + api.endpoint(), api.requestType());
             }
 
-            V obj = gson.fromJson(new InputStreamReader(response.getEntity().getContent()), getOutputClass());
+            V obj = response.getEntity(getOutputClass());
 
             afterExecute(obj);
             return obj;
@@ -74,39 +85,6 @@ public abstract class AbstractRestAPI<T, V> implements IRestAPI<V> {
             catchException(e);
         }
         return null;
-    }
-
-    private HttpUriRequest createHttpClient() throws UnsupportedEncodingException {
-        String url = baseUrl + api.endpoint();
-        switch (api.requestType()) {
-            case GET:    {
-                HttpGet httpGet = new HttpGet(url);
-                return httpGet;
-            }
-            case POST:   {
-                HttpPost httpPost = new HttpPost(url);
-                if (input != null) {
-                    String json = gson.toJson(input);
-                    StringEntity entity = new StringEntity(json);
-                    httpPost.setEntity(entity);
-                }
-                return httpPost;
-            }
-            case PUT:    {
-                HttpPut httpPut = new HttpPut(url);
-                if (input != null) {
-                    String json = gson.toJson(input);
-                    StringEntity entity = new StringEntity(json);
-                    httpPut.setEntity(entity);
-                }
-                return httpPut;
-            }
-            case DELETE: {
-                HttpDelete httpDelete = new HttpDelete(url);
-                return httpDelete;
-            }
-            default: return null;
-        }
     }
 
     private Class<T> getInputClass() throws ClassNotFoundException {

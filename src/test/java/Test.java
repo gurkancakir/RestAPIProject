@@ -7,6 +7,9 @@ public class Test {
         IRestAPI<Output> api = new TestAPI();
         Output output= api.execute();
 
+        IRestAPI<Output> api3 = new TestAPI3();
+        Output output3 = api3.execute();
+
         IRestAPI<Output2> api2 = new TestAPI2();
         Output2 output2 = api2.execute();
     }

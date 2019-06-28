@@ -2,16 +2,17 @@ import bean.Input;
 import bean.Output;
 import core.interfaces.RestAPI;
 
+import java.util.HashMap;
 import java.util.Map;
 
 @RestAPI(
         endpoint = "/test.json"
 )
-public class TestAPI extends ACompanyAPI<Input, Output> {
+public class TestAPI3 extends ACompanyAPI<Input, Output> {
 
-    public TestAPI() {}
+    public TestAPI3() {}
 
-    public TestAPI(Input input) {
+    public TestAPI3(Input input) {
         super();
         this.input = input;
     }
@@ -30,6 +31,9 @@ public class TestAPI extends ACompanyAPI<Input, Output> {
 
     @Override
     public Map<String, String> getQueryParams() {
-        return null;
+        Map<String, String> params = new HashMap<>();
+        params.put("id", "1");
+        params.put("name", "gurkan");
+        return params;
     }
 }

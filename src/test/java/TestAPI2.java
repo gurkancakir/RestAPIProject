@@ -3,6 +3,8 @@ import bean.Output2;
 import core.RequestType;
 import core.interfaces.RestAPI;
 
+import java.util.Map;
+
 @RestAPI(
         endpoint    = "/test2.json",
         requestType = RequestType.POST
@@ -26,5 +28,10 @@ public class TestAPI2 extends ACompanyAPI<Input2, Output2> {
 
     public void catchException(Exception e) {
         System.out.println("catchException " + e.getMessage());
+    }
+
+    @Override
+    public Map<String, String> getQueryParams() {
+        return null;
     }
 }
