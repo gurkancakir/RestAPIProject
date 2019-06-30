@@ -8,9 +8,9 @@ import core.interfaces.IRestAPI;
 import core.interfaces.RestAPI;
 import org.apache.http.HttpResponse;
 import org.apache.http.HttpStatus;
-import org.apache.http.client.HttpClient;
 import org.apache.http.client.methods.*;
 import org.apache.http.entity.StringEntity;
+import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.client.HttpClients;
 
 import java.io.InputStreamReader;
@@ -37,7 +37,7 @@ public abstract class AbstractRestAPIOld<T, V> implements IRestAPI<V> {
     }
 
     public V execute() {
-        try
+        try (CloseableHttpClient client = HttpClients.createDefault())
         {
             Class<?> clazz = this.getClass();
             api = clazz.getAnnotation(RestAPI.class);
@@ -46,7 +46,9 @@ public abstract class AbstractRestAPIOld<T, V> implements IRestAPI<V> {
             }
 
             HttpUriRequest request = createHttpClient();
-            HttpClient client = HttpClients.createDefault();
+            if (request == null) {
+                throw new Exception(new Throwable("request is null "));
+            }
 
             // add headers
             Map<String, String> headers = getHeaders();
