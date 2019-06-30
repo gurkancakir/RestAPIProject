@@ -81,11 +81,10 @@ public abstract class AbstractRestAPIOld<T, V> implements IRestAPI<V> {
     private HttpUriRequest createHttpClient() throws UnsupportedEncodingException {
         String url = baseUrl + api.endpoint();
         switch (api.requestType()) {
-            case GET:    {
+            case GET:
                 HttpGet httpGet = new HttpGet(url);
                 return httpGet;
-            }
-            case POST:   {
+            case POST:
                 HttpPost httpPost = new HttpPost(url);
                 if (input != null) {
                     String json = gson.toJson(input);
@@ -93,8 +92,7 @@ public abstract class AbstractRestAPIOld<T, V> implements IRestAPI<V> {
                     httpPost.setEntity(entity);
                 }
                 return httpPost;
-            }
-            case PUT:    {
+            case PUT:
                 HttpPut httpPut = new HttpPut(url);
                 if (input != null) {
                     String json = gson.toJson(input);
@@ -102,11 +100,9 @@ public abstract class AbstractRestAPIOld<T, V> implements IRestAPI<V> {
                     httpPut.setEntity(entity);
                 }
                 return httpPut;
-            }
-            case DELETE: {
+            case DELETE:
                 HttpDelete httpDelete = new HttpDelete(url);
                 return httpDelete;
-            }
             default: return null;
         }
     }
